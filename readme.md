@@ -2,6 +2,9 @@
 
 Solution to access machine readable AIS Data. This solution uses the free web solutions to crawl the data and returns them in json.
 
+As this repo is a successor to the ais-api, lecacy parts are added (see legacy) Those will be removed in future versions.
+
+
 ## How to use
 
 ### Paths
