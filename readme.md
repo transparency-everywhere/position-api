@@ -7,6 +7,19 @@ As this repo is a successor to the ais-api, lecacy parts are added (see legacy) 
 
 ## How to use
 
+### Location Format
+All locations are returned in this format:
+      {
+        timestamp: ISO 8601
+        latitude: 
+        longitude:
+        course: in deg
+        speed: in kn
+        source: 
+        source_type: e.g. ais
+        raw_data: (contains all the raw data)
+      }
+
 ### Paths
 
 #### /:sourcetype/:source/:vehicleidentifier/location/latest
@@ -25,7 +38,7 @@ As this repo is a successor to the ais-api, some legacy paths are added. Those w
 #### /legacy/getLastPosition/:mmsi
 
 Takes position from MT and from VT and returns the newest
-example: http://localhost:5000/legacy/getLastPosition/211281610
+example: http://localhost:5000/legacy/getLastPosition/211879870
 
 #### /legacy/getLastPositionFromVF/:mmsi
 
