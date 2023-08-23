@@ -1,7 +1,9 @@
-const cheerio = require('cheerio');
 const moment = require('moment');
 const request = require('request');
-var brotli = require('brotli');
+
+
+import Marinetraffic from '../classes/sources/ais/mt'
+
 
 const debug = (...args) => {
   if (true) {
@@ -50,98 +52,17 @@ const headersMT = {
 
 
 function getLocationFromVF(mmsi, cb) {
-  const url = `https://www.vesselfinder.com/vessels/somestring-MMSI-${mmsi}`;
-  debug('getLocationFromVF', url);
-  debug('error VF');
   cb({ error: 'an unknown error occured' });
 }
 
-function getLocationFromMT(mmsi, cb) {
-  const url = `https://www.marinetraffic.com/en/data/?asset_type=vessels&columns=flag,shipname,photo,recognized_next_port,reported_eta,reported_destination,current_port,imo,mmsi,ship_type,show_on_live_map,time_of_latest_position,lat_of_latest_position,lon_of_latest_position&mmsi|eq|mmsi=${mmsi}`;
-  debug('getLocationFromMT', url);
-
-  let headers = headersMT;
-
-  const options = {
-    url,
-    headers,
-  };
-
-  request(options, function (error, response, html) {
-
-
-
-    if (!error && response.statusCode == 200 || response.statusCode == 403)  {
-
-
-      console.log('first request successsfull, set cookie');
-      let secondRequestHeaders = headers;
-      secondRequestHeaders.cookie = response.headers['set-cookie'];
-      secondRequestHeaders.referer = `https://www.marinetraffic.com/en/data/?asset_type=vessels&columns=flag,shipname,photo,recognized_next_port,reported_eta,reported_destination,current_port,imo,mmsi,ship_type,show_on_live_map,time_of_latest_position,lat_of_latest_position,lon_of_latest_position&mmsi|eq|mmsi=${mmsi}`;
-      secondRequestHeaders['Vessel-Image'] = '007fb60815c6558c472a846479502b668e08';
-
-      request({
-        url: `https://www.marinetraffic.com/en/reports?asset_type=vessels&columns=flag,shipname,photo,recognized_next_port,reported_eta,reported_destination,current_port,imo,mmsi,ship_type,show_on_live_map,time_of_latest_position,lat_of_latest_position,lon_of_latest_position&mmsi=${mmsi}`,
-        headers: secondRequestHeaders
-      }, function (error, response, html) {
-
-        if (!error && response.statusCode == 200 || response.statusCode == 403) {
-
-            console.log('second request worked');
-
-            console.log(html);
-
-            let parsed = JSON.parse(html);
-
-            console.log(parsed);
-            if (parsed.totalCount > 0)
-              {
-
-              const latitude = parseFloat(parsed.data[0].LAT);
-              const longitude = parseFloat(parsed.data[0].LON);
-              const speed = parseFloat(parsed.data[0].SPEED);
-              const course = parseFloat(parsed.data[0].COURSE);
-
-              const timestamp = new Date(parsed.data[0].LAST_POS*1000).toISOString();
-              const unixtime = new Date(parsed.data[0].LAST_POS*1000).getTime()/1000;
-              console.log(123);
-
-              //const $ = cheerio.load(html);
-              console.log(timestamp, speed ,course ,latitude ,longitude)
-
-              if (timestamp && latitude && longitude) {
-                cb(
-                  parsePosition({
-                    error: null,
-                    data: {
-                      timestamp: timestamp,
-                      unixtime,
-                      course: course,
-                      speed,
-                      latitude,
-                      longitude,
-                    }
-                  })
-                );
-              } else {
-                cb({ error: 'missing needed position data' });
-              }
-            } else {
-              cb({ error: 'no records were found' });
-            }
-        } else {
-          cb({ error });
-        }
-
-      });
-
-    } else {
-      cb({ error });
-    }
-
-
-
-  });
+async function getLocationFromMT(mmsi, cb) {
+  const mt = new Marinetraffic();
+  let location = await mt.getLocation(mmsi);
+  console.log(location)
+  cb( {
+    "error": null,
+    "data": location
+  })
 }
 
 function getLocation(mmsi, cb) {
