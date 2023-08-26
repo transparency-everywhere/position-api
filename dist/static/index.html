@@ -1,0 +1,72 @@
+<h1 id="locationsource">locationsource</h1>
+<p>Solution to access machine readable AIS Data. This solution uses the free web solutions to crawl the data and returns them in json.</p>
+<p>As this repo is a successor to the ais-api, lecacy parts are added (see legacy) Those will be removed in future versions.</p>
+<h2 id="install-on-local-machine">Install on local machine</h2>
+<p>Requirements: npm &amp; nodejs.</p>
+<ol>
+<li><p>clone this repo</p>
+</li>
+<li><p>run <code>npm install</code></p>
+</li>
+<li><p>run <code>npm run dev</code></p>
+</li>
+</ol>
+<h3 id="location-format">Location Format</h3>
+<p>All locations are returned in this format:
+      {
+        timestamp: ISO 8601
+        latitude: 
+        longitude:
+        course: in deg
+        speed: in kn
+        source: 
+        source_type: e.g. ais
+        raw_data: (contains all the raw data)
+      }</p>
+<h3 id="legacy-paths">Legacy Paths</h3>
+<p>As this repo is a successor to the ais-api, some legacy paths are added. Those will be removed in future versions</p>
+<h4 id="-legacy-getlastposition-mmsi">/legacy/getLastPosition/:mmsi</h4>
+<p>Takes position from MT and from VT and returns the newest
+example: <a href="http://localhost:5000/legacy/getLastPosition/211879870">http://localhost:5000/legacy/getLastPosition/211879870</a></p>
+<h4 id="-legacy-getlastpositionfromvf-mmsi">/legacy/getLastPositionFromVF/:mmsi</h4>
+<p>Returns position from VF
+example: <a href="http://localhost:5000/legacy/getLastPositionFromVF/211281610">http://localhost:5000/legacy/getLastPositionFromVF/211281610</a></p>
+<h4 id="-legacy-getlastpositionfrommt-mmsi">/legacy/getLastPositionFromMT/:mmsi</h4>
+<p>Returns position from MT
+example: <a href="http://localhost:5000/legacy/getLastPositionFromMT/211281610">http://localhost:5000/legacy/getLastPositionFromMT/211281610</a></p>
+<h4 id="-legacy-getvesselsinarea-area">/legacy/getVesselsInArea/:area</h4>
+<p>Returns all vessels in area, defined by a list of area keywords
+example: <a href="http://localhost:5000/legacy/getVesselsInArea/WMED,EMED">http://localhost:5000/legacy/getVesselsInArea/WMED,EMED</a></p>
+<h4 id="-legacy-getvesselsnearme-lat-lng-distance">/legacy/getVesselsNearMe/:lat/:lng/:distance</h4>
+<p>Returns all vessels near me, defined by a location in latitude, longitude, and distance
+example: <a href="http://localhost:5000/legacy/getVesselsNearMe/51.74190/3.89773/2">http://localhost:5000/legacy/getVesselsNearMe/51.74190/3.89773/2</a></p>
+<pre><code class="lang-Javascript">[{
+  name: vessel<span class="hljs-selector-class">.SHIPNAME</span>,
+  id: vessel<span class="hljs-selector-class">.SHIP_ID</span>,
+  lat: Number(vessel.LAT),
+  lon: Number(vessel.LON),
+  timestamp: vessel<span class="hljs-selector-class">.LAST_POS</span>,
+  mmsi: vessel<span class="hljs-selector-class">.MMSI</span>,
+  imo: vessel<span class="hljs-selector-class">.IMO</span>,
+  callsign: vessel<span class="hljs-selector-class">.CALLSIGN</span>,
+  speed: Number(vessel.SPEED),
+  area: vessel<span class="hljs-selector-class">.AREA_CODE</span>,
+  type: vessel<span class="hljs-selector-class">.TYPE_SUMMARY</span>,
+  country: vessel<span class="hljs-selector-class">.COUNTRY</span>,
+  destination: vessel<span class="hljs-selector-class">.DESTINATION</span>,
+  port_current_id: vessel<span class="hljs-selector-class">.PORT_ID</span>,
+  port_current: vessel<span class="hljs-selector-class">.CURRENT_PORT</span>,
+  port_next_id: vessel<span class="hljs-selector-class">.NEXT_PORT_ID</span>,
+  port_next: vessel<span class="hljs-selector-class">.NEXT_PORT_NAME</span>,
+},…]
+</code></pre>
+<h4 id="-legacy-getvesselsinport-shipport">/legacy/getVesselsInPort/:shipPort</h4>
+<p>Returns all vessels in a port, named after the MT nomenclature
+example: <a href="http://localhost:5000/legacy/getVesselsInPort/piraeus">http://localhost:5000/legacy/getVesselsInPort/piraeus</a></p>
+<p>Output format identical to <strong>getVesselsInArea</strong></p>
+<h3 id="paths">Paths</h3>
+<h4 id="-sourcetype-source-vehicleidentifier-location-latest">/:sourcetype/:source/:vehicleidentifier/location/latest</h4>
+<p>find latest position for vehicle for specified sourcetype and source
+example: <a href="http://localhost:5000/ais/mt/211281610/location/latest">http://localhost:5000/ais/mt/211281610/location/latest</a></p>
+<h4 id="-source-placeidentifier-vehicles-">/:source/:placeidentifier/vehicles/</h4>
+<h4 id="-source-area-vehicles">/:source/area/vehicles</h4>
