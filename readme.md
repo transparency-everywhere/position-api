@@ -5,7 +5,15 @@ Solution to access machine readable AIS Data. This solution uses the free web so
 As this repo is a successor to the ais-api, lecacy parts are added (see legacy) Those will be removed in future versions.
 
 
-## How to use
+## Install on local machine
+
+Requirements: npm & nodejs.
+
+1. clone this repo
+
+2. run `npm install`
+
+3. run `npm run dev`
 
 ### Location Format
 All locations are returned in this format:
@@ -19,16 +27,6 @@ All locations are returned in this format:
         source_type: e.g. ais
         raw_data: (contains all the raw data)
       }
-
-### Paths
-
-#### /:sourcetype/:source/:vehicleidentifier/location/latest
-find latest position for vehicle for specified sourcetype and source
-example: http://localhost:5000/ais/mt/211281610/location/latest
-
-#### /:source/:placeidentifier/vehicles/
-
-#### /:source/area/vehicles
 
 ### Legacy Paths
 
@@ -89,13 +87,16 @@ example: http://localhost:5000/legacy/getVesselsInPort/piraeus
 
 Output format identical to **getVesselsInArea**
 
-## Install on local machine
 
-Requirements: npm & nodejs.
+### Paths
 
-1. clone this repo
+#### /:sourcetype/:source/:vehicleidentifier/location/latest
+find latest position for vehicle for specified sourcetype and source
+example: http://localhost:5000/ais/mt/211281610/location/latest
 
-2. run `npm install`
+#### /:source/:placeidentifier/vehicles/
 
-3. run `npm run dev`
+#### /:source/area/vehicles
+
+
 
