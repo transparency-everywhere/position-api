@@ -35,11 +35,8 @@ class Source{
             "body": null,
             "method": method
             });
-            
-            
-            const data = await response.json();
-            
-            return data;
+            let text = await response.text();
+            return text;
         } catch (error) {
             throw error
         }

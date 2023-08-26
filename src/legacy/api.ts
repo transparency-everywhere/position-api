@@ -3,6 +3,7 @@ const request = require('request');
 
 
 import Marinetraffic from '../classes/sources/ais/mt'
+import MyShipTracking from '../classes/sources/ais/mst'
 
 
 const debug = (...args) => {
@@ -52,7 +53,17 @@ const headersMT = {
 
 
 function getLocationFromVF(mmsi, cb) {
-  cb({ error: 'an unknown error occured' });
+  return getLocationFromMST(mmsi,cb)
+}
+
+async function getLocationFromMST(mmsi,cb){
+  const mst = new MyShipTracking();
+  let location = await mst.getLocation(mmsi);
+  console.log(location)
+  cb( {
+    "error": null,
+    "data": location
+  })
 }
 
 async function getLocationFromMT(mmsi, cb) {
@@ -142,6 +153,7 @@ function getVesselsInPort(shipPort, cb) {
 export class api{
     static getLocationFromVF = getLocationFromVF;
     static getLocationFromMT = getLocationFromMT;
+    static getLocationFromMST = getLocationFromMST;
     static getLocation = getLocation;
     static getVesselsInPort = getVesselsInPort;
 }

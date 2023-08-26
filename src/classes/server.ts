@@ -24,8 +24,10 @@ class Server {
         });
       }
       loadLegacyRoutes(){
+        //this route is wrongly named on purpose for legacy reasons.
+        //AS VF is not as easy to reverse as the other ones, it is replaced by MST 
         this.app.get('/legacy/getLastPositionFromVF/:mmsi', (req:any, res:any) => {
-            api.getLocationFromVF(req.params.mmsi, (result) => {
+            api.getLocationFromMST(req.params.mmsi, (result) => {
               res.send(result);
             });
           });
