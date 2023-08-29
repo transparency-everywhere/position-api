@@ -3,7 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { api } from '../legacy/api';
 import { areaApi } from '../legacy/area';
-
+import ADSBexchange from './sources/adsb/adsbe'
 class Server {
     app:any;
     constructor(port) {
@@ -19,8 +19,23 @@ class Server {
           response.sendFile(path.join(__dirname + '/../static/index.html'));
         });
         this.loadLegacyRoutes();
+        this.loadRoutes()
         this.app.listen(this.app.get('port'), () => {
           console.log('Node this.app is running on port', this.app.get('port'));
+        });
+      }
+      loadRoutes(){
+
+        // /:sourcetype/:source/:vehicleidentifier/location/latest
+        this.app.get('/adsb/adsbe/:icao/location/latest', async(req:any, res:any) => {
+          console.log(req.params.icao)
+          const adsbe = new ADSBexchange();
+          let location = await adsbe.getLocation(req.params.icao);
+          console.log(location)
+          res.send( {
+            "error": null,
+            "data": location
+          })
         });
       }
       loadLegacyRoutes(){
