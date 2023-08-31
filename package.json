@@ -12,7 +12,7 @@
     "start": "node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "cp -N .env.template .env"
+    "postinstall": "#cp -n .env.template .env"
   },
   "author": "",
   "license": "ISC",
