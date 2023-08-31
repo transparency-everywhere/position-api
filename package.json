@@ -2,14 +2,17 @@
   "name": "position-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
-  "types": "index.d.ts",
+  "main": "src/index.ts",
+  "types": "src/index.d.ts",
+  "bin": {
+    "position-api": "src/index.ts"
+  },
   "scripts": {
     "build": "npx tsc",
     "start": "node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "cp -n .env.template .env"
+    "postinstall": "cp -N .env.template .env"
   },
   "author": "",
   "license": "ISC",
@@ -30,6 +33,7 @@
     "brotli": "^1.3.3",
     "cors": "^2.8.5",
     "path": "^0.12.7",
-    "puppeteer": "^19.7.2"
+    "puppeteer": "^19.7.2",
+    "request": "^2.88.2"
   }
 }
