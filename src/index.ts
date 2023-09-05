@@ -4,6 +4,6 @@ import Server from './classes/server';
 
 dotenv.config();
 
-const port = process.env.PORT;
+const port = process.env.PORT || 5000;
 
 const server = new Server(port);
