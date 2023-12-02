@@ -3,8 +3,11 @@ import puppeteer from "puppeteer";
 
 
 class Source{
-    browser = false
-    getBrowser = async function (){
+    browser: any;
+    constructor(){
+        this.browser = false;
+    }
+    getBrowser = async  () =>{
         if(this.browser){
             return this.browser;
         }
@@ -14,7 +17,8 @@ class Source{
                 width: 1280, // Width of a MacBook screen
                 height: 1400, // Height of a MacBook screen
             },
-            waitUntil: "domcontentloaded",
+            
+            //waitUntil: "domcontentloaded",
             args: [`--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36`]
           });
         return this.browser
@@ -28,11 +32,11 @@ class Source{
         return grade + (minutes + seconds / 60) / 60;
     }
 
-    fetch = async function(url:String,headers:Object,method:String){
+    fetch = async function(url:string,headers:any,method:string){
         try {
             const response = await fetch(url, {
             "headers": headers,
-            "body": null,
+            "body": undefined,
             "method": method
             });
             let text = await response.text();
