@@ -1,6 +1,6 @@
 import Source from "../Source";
 class Marinetraffic extends Source{
-    parseLocation = async function(result:object){
+    parseLocation = async function(result:any){
         let location = {
             timestamp: result.timestamp,
             latitude: result.latitude,
@@ -18,7 +18,7 @@ class Marinetraffic extends Source{
 
         async function autoScroll(page) {
             await page.evaluate(async () => {
-              await new Promise((resolve, reject) => {
+              await new Promise<void>((resolve, reject) => {
                 let totalHeight = 0;
                 const distance = 100;
                 const timer = setInterval(() => {

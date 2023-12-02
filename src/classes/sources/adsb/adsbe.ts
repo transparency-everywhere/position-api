@@ -2,7 +2,7 @@ import Source from "../Source";
 import fetch from 'node-fetch';
 
 class ADSBExchange extends Source{
-    parseLocation = async function(result:object){
+    parseLocation = async function(result:any){
         let location = {
             timestamp: result.timestamp,
             latitude: result.latitude,
@@ -33,7 +33,7 @@ class ADSBExchange extends Source{
               "Referer": "https://globe.adsbexchange.com/?icao=39e68b",
               "Referrer-Policy": "strict-origin-when-cross-origin"
             },
-            "body": null,
+            "body": undefined,
             "method": "GET"
           });
         const bodyjson = await response.json();
@@ -72,7 +72,7 @@ class ADSBExchange extends Source{
               "Referer": "https://globe.adsbexchange.com/?icao=39e68b",
               "Referrer-Policy": "strict-origin-when-cross-origin"
             },
-            "body": null,
+            "body": undefined,
             "method": "GET"
           });
         const bodyjson = await response.json();

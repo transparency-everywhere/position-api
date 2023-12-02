@@ -1,6 +1,6 @@
 import Source from "../Source";
 class MyShipTracking extends Source{
-    parseLocation = async function(result:object){
+    parseLocation = async function(result:any){
         let location = {
             timestamp: result.timestamp,
             latitude: result.latitude,
