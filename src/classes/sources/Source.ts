@@ -12,7 +12,7 @@ class Source{
             return this.browser;
         }
         this.browser = await puppeteer.launch({
-            headless: true,
+            headless: 'new',
             defaultViewport: {
                 width: 1280, // Width of a MacBook screen
                 height: 1400, // Height of a MacBook screen
