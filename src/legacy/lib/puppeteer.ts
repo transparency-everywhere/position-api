@@ -53,8 +53,6 @@ const scrapeJsonFromResponse = async (options, cb) => {
 
   await page.goto(options.url, { waitUntil: 'networkidle0' })
 
-  const browserVersion = await browser.version()
-
   await browser.close()
 }
 

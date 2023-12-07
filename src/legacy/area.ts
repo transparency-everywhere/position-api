@@ -1,7 +1,7 @@
 const scraper = require('./lib/puppeteer')
 
 const fetchResultByArea = async (area, time, cb) => {
-  const result = await scraper.fetch(
+  await scraper.fetch(
     {
       url: `https://www.marinetraffic.com/en/reports?asset_type=vessels&columns=time_of_latest_position:desc,flag,shipname,photo,recognized_next_port,reported_eta,reported_destination,current_port,imo,ship_type,show_on_live_map,area,lat_of_latest_position,lon_of_latest_position&area_in=${area}&time_of_latest_position_between=${time}`,
       referer:
@@ -37,7 +37,7 @@ const mapResult = (result) => {
   }))
 }
 
-const fetchVesselsInArea = (regions = ['WMED', 'EMED'], cb) => {
+const fetchVesselsInArea: Function = (regions = ['WMED', 'EMED'], cb) => {
   const timeframe = [60, 525600]
   fetchResultByArea(regions.join(','), timeframe.join(','), (result) => {
     if (!result?.data.length) {
@@ -48,7 +48,7 @@ const fetchVesselsInArea = (regions = ['WMED', 'EMED'], cb) => {
 }
 
 const fetchResultNearMe = async (lat, lng, distance, time, cb) => {
-  const result = await scraper.fetch(
+  await scraper.fetch(
     {
       url: `https://www.marinetraffic.com/en/reports?asset_type=vessels&columns=time_of_latest_position:desc,flag,shipname,photo,recognized_next_port,reported_eta,reported_destination,current_port,imo,ship_type,show_on_live_map,area,lat_of_latest_position,lon_of_latest_position&time_of_latest_position_between=${time}&near_me=${lat},${lng},${distance}`,
       referer:
@@ -62,9 +62,9 @@ const fetchResultNearMe = async (lat, lng, distance, time, cb) => {
   )
 }
 
-const fetchVesselsNearMe = (lat = 51.7419, lng = 3.89773, distance = 2, cb) => {
+const fetchVesselsNearMe:Function = (lat = 51.7419, lng = 3.89773, distance = 2, cb) => {
   const timeframe = [60, 525600]
-  fetchResultNearMe(lat, lng, distance, timeframe.join(','), (result) => {
+  fetchResultNearMe(lat, lng, distance, timeframe.join(','), (result: any) => {
     if (!result?.data.length) {
       return cb(null)
     }
