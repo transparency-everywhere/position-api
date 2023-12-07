@@ -62,7 +62,7 @@ const fetchResultNearMe = async (lat, lng, distance, time, cb) => {
   )
 }
 
-const fetchVesselsNearMe:Function = (lat = 51.7419, lng = 3.89773, distance = 2, cb) => {
+const fetchVesselsNearMe: Function = (lat = 51.7419, lng = 3.89773, distance = 2, cb) => {
   const timeframe = [60, 525600]
   fetchResultNearMe(lat, lng, distance, timeframe.join(','), (result: any) => {
     if (!result?.data.length) {
