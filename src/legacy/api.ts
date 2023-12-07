@@ -10,22 +10,6 @@ const debug = (...args) => {
   }
 }
 
-function parsePosition (position) {
-  debug('Position: ', position)
-
-  return {
-    error: position.error,
-    data: {
-      timestamp: position.data.timestamp,
-      unixtime: position.data.unixtime,
-      latitude: parseFloat(position.data.latitude),
-      longitude: parseFloat(position.data.longitude),
-      course: parseFloat(position.data.course),
-      speed: parseFloat(position.data.speed)
-    }
-  }
-}
-
 async function getLocationFromVF (mmsi, cb) {
   await getLocationFromMST(mmsi, cb)
 }

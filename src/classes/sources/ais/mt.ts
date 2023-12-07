@@ -45,13 +45,13 @@ class Marinetraffic extends Source {
     // Scroll to the bottom of the page
     await autoScroll(page)
 
-    const textContent_course = await page.$eval(
+    const text_content_course = await page.$eval(
       '#vesselDetails_latestPositionSection',
       (div) => div.textContent
     )
 
     const courseRegex = /Speed\/Course: (\d+\.\d+) kn \/ (\d+) °/
-    const course_match = textContent_course.match(courseRegex)
+    const course_match = text_content_course.match(courseRegex)
     let course, timestamp, latitude, longitude, speed
 
     if (course_match) {
@@ -63,7 +63,7 @@ class Marinetraffic extends Source {
 
     const timestampRegex =
       /Position Received: (\d{4}-\d{2}-\d{2} \d{2}:\d{2} \D{2} {2}\D{3})/
-    const match_time = textContent_course.match(timestampRegex)
+    const match_time = text_content_course.match(timestampRegex)
     if (match_time) {
       timestamp = match_time[1].replace('LT', '')
       console.log(timestamp)
@@ -71,14 +71,14 @@ class Marinetraffic extends Source {
       throw new Error('Could not parse timestamp from marinetraffic')
     }
 
-    const textContent_pos = await page.$eval(
+    const text_content_pos = await page.$eval(
       '#vesselDetails_summarySection',
       (div) => div.textContent
     )
 
     const regex_pos =
       /position (\d+° \d+' \d+\.\d+" [NS]), (\d+° \d+' \d+\.\d+" [EW])/
-    const matches = textContent_pos.match(regex_pos)
+    const matches = text_content_pos.match(regex_pos)
     if (matches && matches.length === 3) {
       latitude = matches[1]
       longitude = matches[2]
@@ -91,7 +91,7 @@ class Marinetraffic extends Source {
     }
 
     const speedRegex = /currently sailing at ([\d.]+) knots/
-    const speedMatch = textContent_pos.match(speedRegex)
+    const speedMatch = text_content_pos.match(speedRegex)
 
     if (speedMatch && speedMatch.length === 2) {
       speed = parseFloat(speedMatch[1])

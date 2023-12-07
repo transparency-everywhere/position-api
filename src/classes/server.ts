@@ -1,4 +1,4 @@
-import express, { Express, Request, Response } from 'express'
+import express from 'express'
 import cors from 'cors'
 import path from 'path'
 import { api } from '../legacy/api'
@@ -19,7 +19,7 @@ class Server {
       })
     )
     this.app.get('/', (_request: any, response: any) => {
-      response.sendFile(path.join(__dirname + '/../static/index.html'))
+      response.sendFile(path.join(__dirname, '/../static/index.html'))
     })
     this.loadLegacyRoutes()
     this.loadRoutes()
@@ -73,7 +73,7 @@ class Server {
     this.app.get(
       '/legacy/getVesselsInArea/:area',
       async (req: any, res: any) => {
-        const result = await areaApi.fetchVesselsInArea(
+        await areaApi.fetchVesselsInArea(
           req.params.area.split(','),
           (result) => {
             res.json(result)
@@ -84,7 +84,7 @@ class Server {
     this.app.get(
       '/legacy/getVesselsNearMe/:lat/:lng/:distance',
       async (req: any, res: any) => {
-        const result = await areaApi.fetchVesselsNearMe(
+        await areaApi.fetchVesselsNearMe(
           req.params.lat,
           req.params.lng,
           req.params.distance,

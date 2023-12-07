@@ -11,9 +11,9 @@
     "build": "npx tsc",
     "start": "ts-node src/index.ts",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
-    "lint": "eslint --ext .js,.ts .",
-    "lint:fix": "eslint --ext .js,.ts . --fix",
-    "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(js|ts|json)\"",
+    "lint": "eslint --ext .ts .",
+    "lint:fix": "eslint --ext .ts . --fix",
+    "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "#cp -n .env.template .env"
   },

@@ -45,7 +45,7 @@ class MyShipTracking extends Source {
     const pattern =
       /<th>(Longitude|Latitude|Course|Speed|Position Received)<\/th>\s*<td>(.*?)<\/td>/g
     const extractedData: any = {}
-    let match, speed, parsedDate
+    let match, parsedDate
 
     while ((match = pattern.exec(result)) !== null) {
       const key = match[1]

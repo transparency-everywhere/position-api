@@ -7,7 +7,7 @@ class Source {
     this.browser = false
   }
 
-  getBrowser = async () => {
+  getBrowser: any = async () => {
     if (this.browser) {
       return this.browser
     }
@@ -26,7 +26,7 @@ class Source {
     return this.browser
   }
 
-  convertRawCoordinatesIntoDecimal (input) {
+  convertRawCoordinatesIntoDecimal (input): number {
     const grade = parseInt(input.substring(0, input.indexOf('°')))
     const rest = input.substring(input.indexOf('°') + 1)
     const minutes = parseInt(rest.substring(0, rest.indexOf("'")))
@@ -35,17 +35,13 @@ class Source {
   }
 
   fetch = async function (url: string, headers: any, method: string) {
-    try {
-      const response = await fetch(url, {
-        headers,
-        body: undefined,
-        method
-      })
-      const text = await response.text()
-      return text
-    } catch (error) {
-      throw error
-    }
+    const response = await fetch(url, {
+      headers,
+      body: undefined,
+      method
+    })
+    const text = await response.text()
+    return text
   }
 }
 
