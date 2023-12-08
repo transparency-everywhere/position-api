@@ -20,7 +20,7 @@ module.exports = {
     sourceType: "module",
   },
   rules: {
-    'n/no-callback-literal': 'off',
+  'n/no-callback-literal': 'off',
   '@typescript-eslint/explicit-function-return-type': 'off',
   '@typescript-eslint/no-floating-promises': 'off',
   '@typescript-eslint/strict-boolean-expressions': 'off',
