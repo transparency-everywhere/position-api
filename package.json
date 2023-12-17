@@ -45,7 +45,7 @@
     "express": "^4.18.2",
     "moment": "^2.29.4",
     "path": "^0.12.7",
-    "puppeteer": "^19.7.2",
+    "puppeteer": "^19.7.3",
     "request": "^2.88.2"
   }
 }
