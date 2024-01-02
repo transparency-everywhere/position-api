@@ -21,7 +21,7 @@ class MyShipTracking extends Source {
 
   getLocation = async (mmsi: number) => {
     const result = await this.fetch(
-      "https://www.myshiptracking.com/vessels/mmsi-310627000",
+      "https://www.myshiptracking.com/vessels/mmsi-"+parseInt(mmsi),
       {
         accept:
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
