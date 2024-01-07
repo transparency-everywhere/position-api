@@ -1,4 +1,4 @@
-import Source from "../Source";
+import Source from '../Source'
 class Marinetraffic extends Source {
   parseLocation = async function (result: any) {
     const location = {
@@ -7,111 +7,43 @@ class Marinetraffic extends Source {
       longitude: result.longitude,
       course: result.course,
       speed: result.speed,
-      source: "Marinetraffic",
-      source_type: "AIS",
-    };
-    return location;
-  };
+      source: 'Marinetraffic',
+      source_type: 'AIS'
+    }
+    return location
+  }
 
   getLocation = async (mmsi: number) => {
-    async function autoScroll(page) {
-      await page.evaluate(async () => {
-        await new Promise<void>((resolve, reject) => {
-          let totalHeight = 0;
-          const distance = 100;
-          const timer = setInterval(() => {
-            const scrollHeight = document.body.scrollHeight;
-            window.scrollBy(0, distance);
-            totalHeight += distance;
-
-            if (totalHeight >= scrollHeight) {
-              clearInterval(timer);
-              resolve();
-            }
-          }, 100);
-        });
-      });
-    }
-
-    const browser = await this.getBrowser();
-    const page = await browser.newPage();
+    const browser = await this.getBrowser()
+    const page = await browser.newPage()
 
     const url =
-      "https://www.marinetraffic.com/en/ais/details/ships/mmsi:310627000";
-    await page.goto(url);
+      'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + mmsi
+    await page.goto(url)
+    // let parsedData = null;
 
-    await page.waitForSelector("#vesselDetails_summarySection");
+    const waitForResponse = new Promise((resolve) => {
+      page.on('response', async (response) => {
+        const request = response.request()
+        if (request.url().includes('latestPosition')) {
+          const jsonresult = await response.text()
+          const parsedData = JSON.parse(jsonresult)
+          resolve(parsedData)
+        }
+      })
+    })
 
-    // Scroll to the bottom of the page
-    await autoScroll(page);
-
-    const text_content_course = await page.$eval(
-      "#vesselDetails_latestPositionSection",
-      (div) => div.textContent,
-    );
-
-    const courseRegex = /Speed\/Course: (\d+\.\d+) kn \/ (\d+) °/;
-    const course_match = text_content_course.match(courseRegex);
-    let course, timestamp, latitude, longitude, speed;
-
-    if (course_match) {
-      course = parseFloat(course_match[2]);
-    } else {
-      throw new Error("could not parse course from marinetraffic");
-    }
-    console.log("course", course);
-
-    const timestampRegex =
-      /Position Received: (\d{4}-\d{2}-\d{2} \d{2}:\d{2} \D{2} {2}\D{3})/;
-    const match_time = text_content_course.match(timestampRegex);
-    if (match_time) {
-      timestamp = match_time[1].replace("LT", "");
-      console.log(timestamp);
-    } else {
-      throw new Error("Could not parse timestamp from marinetraffic");
-    }
-
-    const text_content_pos = await page.$eval(
-      "#vesselDetails_summarySection",
-      (div) => div.textContent,
-    );
-
-    const regex_pos =
-      /position (\d+° \d+' \d+\.\d+" [NS]), (\d+° \d+' \d+\.\d+" [EW])/;
-    const matches = text_content_pos.match(regex_pos);
-    if (matches && matches.length === 3) {
-      latitude = matches[1];
-      longitude = matches[2];
-
-      console.log("Latitude:", latitude);
-      console.log("Longitude:", longitude);
-    } else {
-      console.log(matches);
-      throw new Error("could not parse location from marinetraffic");
-    }
-
-    const speedRegex = /currently sailing at ([\d.]+) knots/;
-    const speedMatch = text_content_pos.match(speedRegex);
-
-    if (speedMatch && speedMatch.length === 2) {
-      speed = parseFloat(speedMatch[1]);
-
-      console.log("Speed:", speed, "knots");
-    } else {
-      throw new Error("Speed not found in the text.");
-    }
-
-    await browser.close();
+    const parsedData: any = await waitForResponse
+    browser.close()
     const result = {
-      course: parseFloat(course),
-      speed: parseFloat(speed),
-      latitude: this.convertRawCoordinatesIntoDecimal(latitude),
-      longitude: this.convertRawCoordinatesIntoDecimal(longitude),
-      timestamp: new Date(timestamp).toISOString(),
-    };
-    console.log(result);
-    return await this.parseLocation(result);
-  };
+      course: parseFloat(parsedData.course),
+      speed: parseFloat(parsedData.speed),
+      latitude: parseFloat(parsedData.lat),
+      longitude: parseFloat(parsedData.lon),
+      timestamp: new Date(parsedData.lastPos * 1000).toISOString() // assuming lastPos is in seconds
+    }
+    return await this.parseLocation(result)
+  }
 }
 
-export default Marinetraffic;
+export default Marinetraffic
