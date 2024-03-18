@@ -42,6 +42,7 @@ class Marinetraffic extends Source {
       longitude: parseFloat(parsedData.lon),
       timestamp: new Date(parsedData.lastPos * 1000).toISOString() // assuming lastPos is in seconds
     }
+    console.log('THIS IS THE VAR THAT GIVES THE TIMESTAMP' + parsedData.lastPos)
     return await this.parseLocation(result)
   }
 }
