@@ -1,3 +1,5 @@
+this repo is discontinued for now
+
 # locationsource
 
 Solution to access machine readable AIS Data. This solution uses the free web solutions to crawl the data and returns them in json.
