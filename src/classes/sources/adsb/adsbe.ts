@@ -1,5 +1,4 @@
 import Source from "../Source";
-import fetch from "node-fetch";
 
 class ADSBExchange extends Source {
   parseLocation = async function (result: any) {
@@ -18,6 +17,7 @@ class ADSBExchange extends Source {
 
   getLocation = async (icao: string) => {
     /// <reference lib="dom" />
+    const fetch = (await import("node-fetch")).default;
     const response = await fetch(
       `https://globe.adsbexchange.com/data/traces/${icao.slice(
         -2,
@@ -42,9 +42,12 @@ class ADSBExchange extends Source {
         method: "GET",
       },
     );
-    const bodyjson = await response.json();
-    const timestamp = bodyjson.timestamp;
-    const trace = bodyjson.trace;
+    const body = await response.text();
+    const bodyjson = JSON.parse(body);
+    const data = bodyjson as { timestamp: any; trace: any }; // Add this line
+
+    const timestamp = data.timestamp;
+    const trace = data.trace;
     const last_trace = trace[trace.length - 1];
     const [time_offset, lat, lon, alt_baro, ground_speed, ground_track] =
       last_trace;
@@ -63,6 +66,7 @@ class ADSBExchange extends Source {
 
   getLocationFull = async (icao: string) => {
     /// <reference lib="dom" />
+    const fetch = (await import("node-fetch")).default;
     const response = await fetch(
       `https://globe.adsbexchange.com/data/traces/${icao.slice(
         -2,
@@ -87,9 +91,12 @@ class ADSBExchange extends Source {
         method: "GET",
       },
     );
-    const bodyjson = await response.json();
-    const timestamp = bodyjson.timestamp;
-    const trace = bodyjson.trace;
+    const body = await response.text();
+    const bodyjson = JSON.parse(body);
+    const data = bodyjson as { timestamp: any; trace: any }; // Add this line
+
+    const timestamp = data.timestamp;
+    const trace = data.trace;
 
     console.log(trace);
     const last_trace = trace[trace.length - 1];

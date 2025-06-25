@@ -20,22 +20,23 @@ class Marinetraffic extends Source {
       'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + mmsi;
     const browser = await this.getBrowser();
     const page = await browser.newPage();
+    /*CAN BE USED FOR DEBUGGING
     page.on('request', (request) => {
       console.log(`[${request.resourceType()}] ${request.method()} ${request.url()}`);
     });
 
     page.on('requestfailed', (request) => {
       console.log(`[FAILED] ${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
-    });
+    });*/
 
     // Wrap the vessel position extraction in a Promise
     const vesselPositionPromise = new Promise<any>((resolve, reject) => {
       page.on('response', (response) => {
         const reqUrl = response.url();
-        console.log(`[RESPONSE] ${response.status()} ${reqUrl}`);
+        //console.log(`[RESPONSE] ${response.status()} ${reqUrl}`);
         if (/vessels\/.*\/position/.test(reqUrl)) {
           response.text().then(body => {
-            console.log('Vessel position response:', body);
+            //console.log('Vessel position response:', body);
             try {
               const parsedData = JSON.parse(body);
               const result = {
@@ -74,39 +75,6 @@ class Marinetraffic extends Source {
 
     await browser.close();
     return result;
-  }
-  getLocationOld = async (mmsi: number) => {
-    const browser = await this.getBrowser()
-    const page = await browser.newPage()
-
-    const url =
-      'https://www.marinetraffic.com/en/ais/details/ships/mmsi:' + mmsi
-    await page.goto(url)
-    // let parsedData = null;
-
-    const waitForResponse = new Promise((resolve) => {
-      page.on('response', async (response) => {
-        console.log(url)
-        const request = response.request()
-        if (request.url().includes('latestPosition')) {
-          console.log(response.text())
-          const jsonresult = await response.text()
-          const parsedData = JSON.parse(jsonresult)
-          resolve(parsedData)
-        }
-      })
-    })
-
-    const parsedData: any = await waitForResponse
-    browser.close()
-    const result = {
-      course: parseFloat(parsedData.course),
-      speed: parseFloat(parsedData.speed),
-      latitude: parseFloat(parsedData.lat),
-      longitude: parseFloat(parsedData.lon),
-      timestamp: new Date(parsedData.lastPos * 1000).toISOString() // assuming lastPos is in seconds
-    }
-    return await this.parseLocation(result)
   }
 }
 

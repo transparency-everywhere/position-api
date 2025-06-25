@@ -16,7 +16,7 @@
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "copyfiles -n .env.template .env",
-    "generate:readme": "pandoc README.md -o ./src/static/index.html"
+    "generate:readme": "pandoc -f markdown+autolink_bare_uris README.md -o ./src/static/index.html"
   },
   "author": "",
   "license": "ISC",
