@@ -1,60 +1,140 @@
-<h1 id="locationsource">locationsource</h1>
-<p>Solution to access machine readable AIS Data. This solution uses the free web solutions to crawl the data and returns them in json.</p>
-<h2 id="how-to-use">How to use</h2>
-<h3 id="paths">Paths</h3>
-<h4 id="-sourcetype-source-vehicleidentifier-location-latest">/:sourcetype/:source/:vehicleidentifier/location/latest</h4>
-<p>find latest position for vehicle for specified sourcetype and source
-example: <a href="http://localhost:5000/ais/mt/211281610/location/latest">http://localhost:5000/ais/mt/211281610/location/latest</a></p>
-<h4 id="-source-placeidentifier-vehicles-">/:source/:placeidentifier/vehicles/</h4>
-<h4 id="-source-area-vehicles">/:source/area/vehicles</h4>
-<h3 id="legacy-paths">Legacy Paths</h3>
-<p>As this repo is a successor to the ais-api, some legacy paths are added. Those will be removed in future versions</p>
-<h4 id="-legacy-getlastposition-mmsi">/legacy/getLastPosition/:mmsi</h4>
-<p>Takes position from MT and from VT and returns the newest
-example: <a href="http://localhost:5000/legacy/getLastPosition/211281610">http://localhost:5000/legacy/getLastPosition/211281610</a></p>
-<h4 id="-legacy-getlastpositionfromvf-mmsi">/legacy/getLastPositionFromVF/:mmsi</h4>
-<p>Returns position from VF
-example: <a href="http://localhost:5000/legacy/getLastPositionFromVF/211281610">http://localhost:5000/legacy/getLastPositionFromVF/211281610</a></p>
-<h4 id="-legacy-getlastpositionfrommt-mmsi">/legacy/getLastPositionFromMT/:mmsi</h4>
-<p>Returns position from MT
-example: <a href="http://localhost:5000/legacy/getLastPositionFromMT/211281610">http://localhost:5000/legacy/getLastPositionFromMT/211281610</a></p>
-<h4 id="-legacy-getvesselsinarea-area">/legacy/getVesselsInArea/:area</h4>
-<p>Returns all vessels in area, defined by a list of area keywords
-example: <a href="http://localhost:5000/legacy/getVesselsInArea/WMED,EMED">http://localhost:5000/legacy/getVesselsInArea/WMED,EMED</a></p>
-<h4 id="-legacy-getvesselsnearme-lat-lng-distance">/legacy/getVesselsNearMe/:lat/:lng/:distance</h4>
-<p>Returns all vessels near me, defined by a location in latitude, longitude, and distance
-example: <a href="http://localhost:5000/legacy/getVesselsNearMe/51.74190/3.89773/2">http://localhost:5000/legacy/getVesselsNearMe/51.74190/3.89773/2</a></p>
-<pre><code class="lang-Javascript">[{
-  name: vessel<span class="hljs-selector-class">.SHIPNAME</span>,
-  id: vessel<span class="hljs-selector-class">.SHIP_ID</span>,
-  lat: Number(vessel.LAT),
-  lon: Number(vessel.LON),
-  timestamp: vessel<span class="hljs-selector-class">.LAST_POS</span>,
-  mmsi: vessel<span class="hljs-selector-class">.MMSI</span>,
-  imo: vessel<span class="hljs-selector-class">.IMO</span>,
-  callsign: vessel<span class="hljs-selector-class">.CALLSIGN</span>,
-  speed: Number(vessel.SPEED),
-  area: vessel<span class="hljs-selector-class">.AREA_CODE</span>,
-  type: vessel<span class="hljs-selector-class">.TYPE_SUMMARY</span>,
-  country: vessel<span class="hljs-selector-class">.COUNTRY</span>,
-  destination: vessel<span class="hljs-selector-class">.DESTINATION</span>,
-  port_current_id: vessel<span class="hljs-selector-class">.PORT_ID</span>,
-  port_current: vessel<span class="hljs-selector-class">.CURRENT_PORT</span>,
-  port_next_id: vessel<span class="hljs-selector-class">.NEXT_PORT_ID</span>,
-  port_next: vessel<span class="hljs-selector-class">.NEXT_PORT_NAME</span>,
-},…]
-</code></pre>
-<h4 id="-legacy-getvesselsinport-shipport">/legacy/getVesselsInPort/:shipPort</h4>
-<p>Returns all vessels in a port, named after the MT nomenclature
-example: <a href="http://localhost:5000/legacy/getVesselsInPort/piraeus">http://localhost:5000/legacy/getVesselsInPort/piraeus</a></p>
-<p>Output format identical to <strong>getVesselsInArea</strong></p>
-<h2 id="install-on-local-machine">Install on local machine</h2>
-<p>Requirements: npm &amp; nodejs.</p>
-<ol>
-<li><p>clone this repo</p>
-</li>
-<li><p>run <code>npm install</code></p>
-</li>
-<li><p>run <code>npm run dev</code></p>
-</li>
-</ol>
+<h1 id="position-api">Position API</h1>
+<p>A Node.js/TypeScript API for retrieving real-time positions of
+vessels and aircraft from various sources, including MarineTraffic (AIS)
+and ADS-B Exchange.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li>Fetch latest vessel positions by MMSI from MarineTraffic.</li>
+<li>Fetch latest aircraft positions by ICAO from ADS-B Exchange.</li>
+<li>Legacy endpoints for compatibility.</li>
+<li>Area and port-based vessel queries.</li>
+<li>Puppeteer-based scraping with stealth plugin for anti-bot
+evasion.</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Node.js (v18+ recommended)</li>
+<li>npm</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/transparency-everywhere/position-api.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> position-api</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span></code></pre></div>
+<h3 id="configuration">Configuration</h3>
+<p>Copy the environment template and adjust as needed:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cp</span> .env.template .env</span></code></pre></div>
+<h3 id="build">Build</h3>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run build</span></code></pre></div>
+<h3 id="run">Run</h3>
+<p>Development mode (with auto-reload):</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> run dev</span></code></pre></div>
+<p>Production mode:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> start</span></code></pre></div>
+<h2 id="api-endpoints">API Endpoints</h2>
+<h3 id="vessel-position">Vessel Position</h3>
+<ul>
+<li><code>GET /ais/mt/:mmsi/location/latest</code><br />
+Get latest position for a vessel by MMSI.</li>
+</ul>
+<h3 id="aircraft-position">Aircraft Position</h3>
+<ul>
+<li><code>GET /adsb/adsbe/:icao/location/latest</code><br />
+Get latest position for an aircraft by ICAO code.</li>
+</ul>
+<h3 id="legacy-endpoints">Legacy Endpoints</h3>
+<ul>
+<li><code>/legacy/getLastPositionFromVF/:mmsi</code></li>
+<li><code>/legacy/getLastPositionFromMT/:mmsi</code></li>
+<li><code>/legacy/getLastPosition/:mmsi</code></li>
+<li><code>/legacy/getVesselsInArea/:area</code></li>
+<li><code>/legacy/getVesselsNearMe/:lat/:lng/:distance</code></li>
+<li><code>/legacy/getVesselsInPort/:shipPort</code></li>
+</ul>
+<h2 id="development">Development</h2>
+<ul>
+<li>Lint code: <code>npm run lint</code></li>
+<li>Format code: <code>npm run prettier</code></li>
+<li>Run tests: <code>npm test</code></li>
+</ul>
+<h2 id="contributing">Contributing</h2>
+<p>Pull requests are welcome! For major changes, please open an issue
+first to discuss what you would like to change.</p>
+<h2 id="license">License</h2>
+<p><a href="LICENSE">ISC</a></p>
+<hr />
+<p><em>Powered by Node.js, Express, Puppeteer, and TypeScript.</em> curl
+<a href="http://localhost:5000/legacy/getVesselsInArea/WMED,EMED"
+class="uri">http://localhost:5000/legacy/getVesselsInArea/WMED,EMED</a></p>
+<h1 id="legacy-get-vessels-near-a-location">Legacy: Get vessels near a
+location</h1>
+<p>curl <a
+href="http://localhost:5000/legacy/getVesselsNearMe/37.7749/-122.4194/10"
+class="uri">http://localhost:5000/legacy/getVesselsNearMe/37.7749/-122.4194/10</a></p>
+<h1 id="legacy-get-vessels-in-port">Legacy: Get vessels in port</h1>
+<p>curl <a href="http://localhost:5000/legacy/getVesselsInPort/Hamburg"
+class="uri">http://localhost:5000/legacy/getVesselsInPort/Hamburg</a></p>
+<pre><code>
+---
+
+## Notes
+
+- All endpoints return JSON.
+- Replace `localhost:5000` with your server&#39;s address and port if different.
+- Pull requests and issues are welcome!
+
+---
+
+## Notes
+
+- All endpoints return JSON.
+- Replace `localhost:5000` with your server&#39;s address and port if different.
+- Pull requests and issues are welcome!
+
+---
+- **Get latest location by ICAO**</code></pre>
+<p>GET /adsb/adsbe/:icao/location/latest <code>**Example:**</code> curl
+<a href="http://localhost:5000/adsb/adsbe/abc123/location/latest"
+class="uri">http://localhost:5000/adsb/adsbe/abc123/location/latest</a>
+```</p>
+<h3 id="legacy-vessel-routes">Legacy Vessel Routes</h3>
+<ul>
+<li><p><strong>Get last position from MST (replaces VF)</strong></p>
+<pre><code>GET /legacy/getLastPositionFromVF/:mmsi</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code>curl http://localhost:5000/legacy/getLastPositionFromVF/211879870</code></pre></li>
+<li><p><strong>Get last position from Marinetraffic</strong></p>
+<pre><code>GET /legacy/getLastPositionFromMT/:mmsi</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code>curl http://localhost:5000/legacy/getLastPositionFromMT/211879870</code></pre></li>
+<li><p><strong>Get last position (default)</strong></p>
+<pre><code>GET /legacy/getLastPosition/:mmsi</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code>curl http://localhost:5000/legacy/getLastPosition/211879870</code></pre></li>
+<li><p><strong>Get vessels in area</strong></p>
+<pre><code>GET /legacy/getVesselsInArea/:area</code></pre>
+<ul>
+<li><code>:area</code> is a comma-separated list,
+e.g. <code>WMED,EMED</code> <strong>Example:</strong></li>
+</ul>
+<pre><code>curl http://localhost:5000/legacy/getVesselsInArea/WMED,EMED</code></pre></li>
+<li><p><strong>Get vessels near me</strong></p>
+<pre><code>GET /legacy/getVesselsNearMe/:lat/:lng/:distance</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code>curl http://localhost:5000/legacy/getVesselsNearMe/37.7749/-122.4194/10</code></pre></li>
+<li><p><strong>Get vessels in port</strong></p>
+<pre><code>GET /legacy/getVesselsInPort/:shipPort</code></pre>
+<p><strong>Example:</strong></p>
+<pre><code>curl http://localhost:5000/legacy/getVesselsInPort/Hamburg</code></pre></li>
+</ul>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>All endpoints return JSON.</li>
+<li>Replace <code>localhost:5000</code> with your server’s address and
+port if different.</li>
+</ul>

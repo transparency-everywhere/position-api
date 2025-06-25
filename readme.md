@@ -1,104 +1,192 @@
-this repo is discontinued for now
+# Position API
 
-# locationsource
+A Node.js/TypeScript API for retrieving real-time positions of vessels and aircraft from various sources, including MarineTraffic (AIS) and ADS-B Exchange.
 
-Solution to access machine readable AIS Data. This solution uses the free web solutions to crawl the data and returns them in json.
+## Features
 
-As this repo is a successor to the ais-api, lecacy parts are added (see legacy) Those will be removed in future versions.
+- Fetch latest vessel positions by MMSI from MarineTraffic.
+- Fetch latest aircraft positions by ICAO from ADS-B Exchange.
+- Legacy endpoints for compatibility.
+- Area and port-based vessel queries.
+- Puppeteer-based scraping with stealth plugin for anti-bot evasion.
 
+## Getting Started
 
-## Install on local machine
+### Prerequisites
 
-Requirements: npm & nodejs.
+- Node.js (v18+ recommended)
+- npm
 
-1. clone this repo
+### Installation
 
-2. run `npm install`
-
-3. run `npm run dev`
-
-### Location Format
-All locations are returned in this format:
-      {
-        timestamp: ISO 8601
-        latitude: 
-        longitude:
-        course: in deg
-        speed: in kn
-        source: 
-        source_type: e.g. ais
-        raw_data: (contains all the raw data)
-      }
-
-### Legacy Paths
-
-As this repo is a successor to the ais-api, some legacy paths are added. Those will be removed in future versions
-
-
-#### /legacy/getLastPosition/:mmsi
-
-Takes position from MT and from VT and returns the newest
-example: http://localhost:5000/legacy/getLastPosition/211879870
-
-#### /legacy/getLastPositionFromVF/:mmsi
-
-Returns position from VF
-example: http://localhost:5000/legacy/getLastPositionFromVF/211281610
-
-#### /legacy/getLastPositionFromMT/:mmsi
-
-Returns position from MT
-example: http://localhost:5000/legacy/getLastPositionFromMT/211281610
-
-#### /legacy/getVesselsInArea/:area
-
-Returns all vessels in area, defined by a list of area keywords
-example: http://localhost:5000/legacy/getVesselsInArea/WMED,EMED
-
-#### /legacy/getVesselsNearMe/:lat/:lng/:distance
-
-Returns all vessels near me, defined by a location in latitude, longitude, and distance
-example: http://localhost:5000/legacy/getVesselsNearMe/51.74190/3.89773/2
-
-```Javascript
-[{
-  name: vessel.SHIPNAME,
-  id: vessel.SHIP_ID,
-  lat: Number(vessel.LAT),
-  lon: Number(vessel.LON),
-  timestamp: vessel.LAST_POS,
-  mmsi: vessel.MMSI,
-  imo: vessel.IMO,
-  callsign: vessel.CALLSIGN,
-  speed: Number(vessel.SPEED),
-  area: vessel.AREA_CODE,
-  type: vessel.TYPE_SUMMARY,
-  country: vessel.COUNTRY,
-  destination: vessel.DESTINATION,
-  port_current_id: vessel.PORT_ID,
-  port_current: vessel.CURRENT_PORT,
-  port_next_id: vessel.NEXT_PORT_ID,
-  port_next: vessel.NEXT_PORT_NAME,
-},…]
+```bash
+git clone https://github.com/transparency-everywhere/position-api.git
+cd position-api
+npm install
 ```
 
-#### /legacy/getVesselsInPort/:shipPort
+### Configuration
 
-Returns all vessels in a port, named after the MT nomenclature
-example: http://localhost:5000/legacy/getVesselsInPort/piraeus
+Copy the environment template and adjust as needed:
 
-Output format identical to **getVesselsInArea**
+```bash
+cp .env.template .env
+```
 
+### Build
 
-### Paths
+```bash
+npm run build
+```
 
-#### /:sourcetype/:source/:vehicleidentifier/location/latest
-find latest position for vehicle for specified sourcetype and source
-example: http://localhost:5000/ais/mt/211281610/location/latest
+### Run
 
-#### /:source/:placeidentifier/vehicles/
+Development mode (with auto-reload):
 
-#### /:source/area/vehicles
+```bash
+npm run dev
+```
+
+Production mode:
+
+```bash
+npm start
+```
+
+## API Endpoints
+
+### Vessel Position
+
+- `GET /ais/mt/:mmsi/location/latest`  
+  Get latest position for a vessel by MMSI.
+
+### Aircraft Position
+
+- `GET /adsb/adsbe/:icao/location/latest`  
+  Get latest position for an aircraft by ICAO code.
+
+### Legacy Endpoints
+
+- `/legacy/getLastPositionFromVF/:mmsi`
+- `/legacy/getLastPositionFromMT/:mmsi`
+- `/legacy/getLastPosition/:mmsi`
+- `/legacy/getVesselsInArea/:area`
+- `/legacy/getVesselsNearMe/:lat/:lng/:distance`
+- `/legacy/getVesselsInPort/:shipPort`
+
+## Development
+
+- Lint code: `npm run lint`
+- Format code: `npm run prettier`
+- Run tests: `npm test`
+
+## Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+
+[ISC](LICENSE)
+
+---
+
+*Powered by Node.js, Express, Puppeteer, and TypeScript.*
+curl http://localhost:5000/legacy/getVesselsInArea/WMED,EMED
+
+# Legacy: Get vessels near a location
+curl http://localhost:5000/legacy/getVesselsNearMe/37.7749/-122.4194/10
+
+# Legacy: Get vessels in port
+curl http://localhost:5000/legacy/getVesselsInPort/Hamburg
+```
+
+---
+
+## Notes
+
+- All endpoints return JSON.
+- Replace `localhost:5000` with your server's address and port if different.
+- Pull requests and issues are welcome!
+
+---
+
+## Notes
+
+- All endpoints return JSON.
+- Replace `localhost:5000` with your server's address and port if different.
+- Pull requests and issues are welcome!
+
+---
+- **Get latest location by ICAO**
+  ```
+  GET /adsb/adsbe/:icao/location/latest
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/adsb/adsbe/abc123/location/latest
+  ```
+
+### Legacy Vessel Routes
+
+- **Get last position from MST (replaces VF)**
+  ```
+  GET /legacy/getLastPositionFromVF/:mmsi
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getLastPositionFromVF/211879870
+  ```
+
+- **Get last position from Marinetraffic**
+  ```
+  GET /legacy/getLastPositionFromMT/:mmsi
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getLastPositionFromMT/211879870
+  ```
+
+- **Get last position (default)**
+  ```
+  GET /legacy/getLastPosition/:mmsi
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getLastPosition/211879870
+  ```
+
+- **Get vessels in area**
+  ```
+  GET /legacy/getVesselsInArea/:area
+  ```
+  - `:area` is a comma-separated list, e.g. `WMED,EMED`
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getVesselsInArea/WMED,EMED
+  ```
+
+- **Get vessels near me**
+  ```
+  GET /legacy/getVesselsNearMe/:lat/:lng/:distance
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getVesselsNearMe/37.7749/-122.4194/10
+  ```
+
+- **Get vessels in port**
+  ```
+  GET /legacy/getVesselsInPort/:shipPort
+  ```
+  **Example:**
+  ```
+  curl http://localhost:5000/legacy/getVesselsInPort/Hamburg
+  ```
+
+## Notes
+
+- All endpoints return JSON.
+- Replace `localhost:5000` with your server's address and port if different.
 
 
 
