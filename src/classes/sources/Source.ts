@@ -1,5 +1,7 @@
 import fetch from "node-fetch";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+puppeteer.use(StealthPlugin());
 
 class Source {
   browser: any;
@@ -12,7 +14,7 @@ class Source {
       return this.browser;
     }
     this.browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       defaultViewport: {
         width: 1280, // Width of a MacBook screen
         height: 1400, // Height of a MacBook screen

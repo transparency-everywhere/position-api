@@ -9,13 +9,14 @@
   },
   "scripts": {
     "build": "npx tsc",
-    "start": "ts-node src/index.ts",
+    "start": "npx tsx src/index.ts",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "lint": "eslint --ext .ts .",
     "lint:fix": "eslint --ext .ts . --fix",
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "copyfiles -n .env.template .env"
+    "postinstall": "copyfiles -n .env.template .env",
+    "generate:readme": "pandoc README.md -o ./src/static/index.html"
   },
   "author": "",
   "license": "ISC",
