@@ -16,13 +16,14 @@
     "prettier": "prettier --ignore-path .gitignore --write \"**/*.+(ts|json)\"",
     "test": "jest",
     "test:curl": "sh ./test-curl.sh",
-    "test:curl:js": "jest ./test/api.curl.test.js",
+    "test:curl:js": "jest ./test/api.curl.test.ts",
     "postinstall": "copyfiles -n .env.template .env",
     "generate:readme": "pandoc -f markdown+autolink_bare_uris README.md -o ./src/static/index.html"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^18.19.9",
     "@types/node-fetch": "^2.6.4",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
