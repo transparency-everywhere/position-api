@@ -32,7 +32,7 @@ class Server {
   close () {
     if (this.server) {
       this.server.close()
-      console.log('Server closed');
+      console.log('Server closed')
     }
   }
 
