@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.gitignore
+Dockerfile*
+.github/
+.env
+npm-debug.log
+yarn-error.log
+coverage
+*.tsbuildinfo
