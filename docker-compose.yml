@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  position-api:
+    build: .
+    container_name: position-api
+    ports:
+      - "5001:5001"
+    environment:
+      - NODE_ENV=production
+      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    # If you need to persist data, add volumes here
+    # volumes:
+    #   - .:/app
+    #   - /app/node_modules
+    # If your app needs to access host network (rarely needed)
+    # network_mode: host
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN

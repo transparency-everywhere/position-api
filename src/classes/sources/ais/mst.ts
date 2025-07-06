@@ -84,6 +84,7 @@ class MyShipTracking extends Source {
       timestamp: new Date(parsedDate).toISOString(),
     };
     console.log(position);
+    this.verifyPosition(position);
     return position;
   };
 }
