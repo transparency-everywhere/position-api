@@ -1,7 +1,6 @@
-
-
+# syntax=docker/dockerfile:1.4
 # Use the official Puppeteer image (includes all dependencies and Chromium)
-FROM ghcr.io/puppeteer/puppeteer:latest
+FROM --platform=linux/amd64 ghcr.io/puppeteer/puppeteer:latest
 
 # Switch to root to copy files and set permissions
 USER root
