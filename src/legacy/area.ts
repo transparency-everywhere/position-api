@@ -40,7 +40,7 @@ const mapResult = (result) => {
 const fetchVesselsInArea: Function = (regions = ["WMED", "EMED"], cb) => {
   const timeframe = [60, 525600];
   fetchResultByArea(regions.join(","), timeframe.join(","), (result) => {
-    if (!result?.data.length) {
+    if (!result?.data?.length) {
       return cb(null);
     }
     return cb(mapResult(result));
@@ -70,7 +70,7 @@ const fetchVesselsNearMe: Function = (
 ) => {
   const timeframe = [60, 525600];
   fetchResultNearMe(lat, lng, distance, timeframe.join(","), (result: any) => {
-    if (!result?.data.length) {
+    if (!result?.data?.length) {
       return cb(null);
     }
     return cb(mapResult(result));

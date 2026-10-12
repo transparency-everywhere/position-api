@@ -4,6 +4,21 @@ import path from "path";
 import { api } from "../legacy/api";
 import { areaApi } from "../legacy/area";
 import ADSBexchange from "./sources/adsb/adsbe";
+
+/**
+ * Reduces a thrown value to something that survives JSON serialisation: an
+ * Error stringifies to {}, which told callers nothing about what went wrong.
+ */
+function describeError(error: any): string | null {
+  if (error === null || error === undefined) {
+    return null;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return typeof error === "string" ? error : String(error);
+}
+
 class Server {
   app: any;
   server: any;
@@ -43,14 +58,17 @@ class Server {
       async (req: any, res: any) => {
         try {
           api.getLocationFromMT(req.params.mmsi, (result) => {
+            // The legacy helper already answers in the { error, data } shape,
+            // so it is unwrapped here rather than nested inside data — the
+            // position belongs directly under data, as on the ADS-B route.
             res.send({
-              error: null,
-              data: result,
+              error: describeError(result?.error),
+              data: result?.data ?? null,
             });
           });
         } catch (error) {
           res.send({
-            error: error || "Unknown error",
+            error: describeError(error) ?? "Unknown error",
             data: null,
           });
         }
@@ -61,12 +79,23 @@ class Server {
       async (req: any, res: any) => {
         console.log(req.params.icao);
         const adsbe = new ADSBexchange();
-        const location = await adsbe.getLocation(req.params.icao);
-        console.log(location);
-        res.send({
-          error: null,
-          data: location,
-        });
+        // An upstream failure rejects here, and an express 4 route does not
+        // catch that, so it would surface as an unhandled rejection and take
+        // the process down instead of answering the request.
+        try {
+          const location = await adsbe.getLocation(req.params.icao);
+          console.log(location);
+          res.send({
+            error: null,
+            data: location,
+          });
+        } catch (error: any) {
+          console.error("Could not read ADS-B location:", error);
+          res.send({
+            error: describeError(error) ?? "Unknown error",
+            data: null,
+          });
+        }
       },
     );
   }

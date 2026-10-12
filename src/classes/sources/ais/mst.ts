@@ -1,4 +1,5 @@
 import Source from "../Source";
+
 class MyShipTracking extends Source {
   parseLocation = async function (result: any) {
     const location = {
@@ -15,77 +16,123 @@ class MyShipTracking extends Source {
 
   // the method in the sources class does not work if no seconds are in the string
   dmsToDecimalDegreesMST = function (dms) {
-    console.log(dms);
     return parseFloat(dms);
   };
 
-  getLocation = async (mmsi: number) => {
-    const result = await this.fetch(
-      "https://www.myshiptracking.com/vessels/mmsi-" + mmsi,
-      {
-        accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-        "accept-language": "de-DE,de;q=0.6",
-        "cache-control": "max-age=0",
-        "sec-ch-ua":
-          '"Chromium";v="116", "Not)A;Brand";v="24", "Brave";v="116"',
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": '"macOS"',
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "sec-fetch-site": "none",
-        "sec-fetch-user": "?1",
-        "sec-gpc": "1",
-        "upgrade-insecure-requests": "1",
-        cookie:
-          "usr_lang_exist=1; port_tz=LT; user_tz=MT; user_df=1; session_id_sp_trk=fd1i0pb2mt6i4nra9c1mejsmvk; offset=Europe%2FBerlin; usr_lang_exist=1; io=ilOBwd-Xh9Z1fGzpFaM0",
-      },
-      "GET",
-    );
+  /**
+   * Reads the "<th>Label</th><td>value</td>" rows of the vessel detail table.
+   * Coordinates are withheld from this table for anonymous visitors (they are
+   * rendered as "---"), so it is only used for the fields that do carry data.
+   */
+  extractTableFields = function (html: string) {
     const pattern =
       /<th>(Longitude|Latitude|Course|Speed|Position Received)<\/th>\s*<td>(.*?)<\/td>/g;
-    const extractedData: any = {};
-    let match, parsedDate;
-
-    while ((match = pattern.exec(result)) !== null) {
-      const key = match[1];
-      const value = match[2];
-      extractedData[key] = value;
+    const fields: any = {};
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      if (fields[match[1]] === undefined) {
+        fields[match[1]] = match[2];
+      }
     }
+    return fields;
+  };
 
-    console.log(extractedData["Position Received"]);
-    console.log(123);
-
-    // Extract the date and time string using regular expression
-    const regex = /title="([^"]+)"/;
-    const matchd = extractedData["Position Received"].match(regex);
-
-    if (matchd?.[1]) {
-      const dateTimeString = matchd[1];
-
-      // Parse the extracted date and time string
-      const [datePart, timePart] = dateTimeString.split(" ");
-      const [year, month, day] = datePart.split("-");
-      const [hour, minute] = timePart.split(":");
-
-      // JavaScript months are 0-based, so subtract 1 from the month
-      parsedDate = new Date(year, month - 1, day, hour, minute);
-
-      console.log(parsedDate); // This will log the parsed date object
-    } else {
-      console.log("Date not found in the input string.");
-    }
-
-    const position = {
-      latitude: this.dmsToDecimalDegreesMST(extractedData.Latitude),
-      longitude: this.dmsToDecimalDegreesMST(extractedData.Longitude),
-      course: 10,
-      speed: parseFloat(extractedData.Speed),
-      timestamp: new Date(parsedDate).toISOString(),
+  /**
+   * The page carries a plain-language summary of the last AIS report, e.g.
+   *   "... with coordinates 33.22338° / 14.39467° as reported on
+   *    2026-10-09 17:11 ... The vessel's current speed is 2.6 Knots ..."
+   * That sentence is the only place where the exact position is published, so
+   * it is the primary source here and the table is used for the rest.
+   */
+  extractSummary = function (html: string) {
+    const name = html.match(
+      /The current position of\s*<strong>\s*([^<]+?)\s*<\/strong>/i,
+    );
+    const coordinates = html.match(
+      /coordinates\s*<strong>\s*(-?\d+(?:\.\d+)?)°\s*\/\s*(-?\d+(?:\.\d+)?)°\s*<\/strong>/i,
+    );
+    const reportedAt = html.match(
+      /as reported on\s*<strong>\s*(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(?::\d{2})?)\s*<\/strong>/i,
+    );
+    const speed = html.match(
+      /current speed is\s*<strong>\s*(-?\d+(?:\.\d+)?)\s*Knots?\s*<\/strong>/i,
+    );
+    return {
+      name: name?.[1],
+      latitude: coordinates ? parseFloat(coordinates[1]) : NaN,
+      longitude: coordinates ? parseFloat(coordinates[2]) : NaN,
+      reportedAt: reportedAt?.[1],
+      speed: speed ? parseFloat(speed[1]) : NaN,
     };
-    console.log(position);
-    this.verifyPosition(position);
+  };
+
+  /**
+   * "2026-10-09 17:11" is reported in UTC; Date.parse needs the explicit zone
+   * to avoid reading it as the server's local time.
+   */
+  parseReportedAt = function (reportedAt?: string) {
+    if (!reportedAt) {
+      return undefined;
+    }
+    const isoLike = reportedAt.replace(" ", "T");
+    const withSeconds = /T\d{2}:\d{2}$/.test(isoLike)
+      ? isoLike + ":00"
+      : isoLike;
+    const parsed = new Date(withSeconds + "Z");
+    return isNaN(parsed.getTime()) ? undefined : parsed.toISOString();
+  };
+
+  /**
+   * The position plus the vessel's name. Marinetraffic publishes no MMSI with
+   * its positions and can only be queried by area, so it needs a name and a
+   * place to start looking — see src/classes/sources/ais/mt.ts.
+   */
+  getVessel = async (mmsi: number) => {
+    return await this.readVessel(mmsi);
+  };
+
+  getLocation = async (mmsi: number) => {
+    const vessel = await this.readVessel(mmsi);
+    const { name, ...position } = vessel;
     return position;
+  };
+
+  readVessel = async (mmsi: number) => {
+    const url = "https://www.myshiptracking.com/vessels/mmsi-" + mmsi;
+    try {
+      // myshiptracking.com sits behind a bot check that answers a plain fetch
+      // with a challenge page, so the page is rendered in a real browser.
+      const html = await this.fetchRendered(url);
+      const fields = this.extractTableFields(html);
+      const summary = this.extractSummary(html);
+
+      const speed = !isNaN(summary.speed)
+        ? summary.speed
+        : parseFloat(fields.Speed);
+      const course = parseFloat(fields.Course);
+      const timestamp = this.parseReportedAt(summary.reportedAt);
+
+      if (timestamp === undefined) {
+        throw new Error(
+          "Could not read the AIS report time for MMSI " +
+            mmsi +
+            " from myshiptracking.com",
+        );
+      }
+
+      const position = {
+        name: summary.name,
+        latitude: summary.latitude,
+        longitude: summary.longitude,
+        course: isNaN(course) ? 0 : course,
+        speed: isNaN(speed) ? 0 : speed,
+        timestamp,
+      };
+      this.verifyPosition(position);
+      return position;
+    } finally {
+      await this.closeBrowser();
+    }
   };
 }
 

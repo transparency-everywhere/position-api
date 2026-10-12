@@ -1,0 +1,40 @@
+name: Integration Tests
+
+# The integration suite reads live third-party sources through a real browser,
+# so it is too slow and too dependent on those sources to gate every push. It
+# runs nightly and on demand instead, which is what surfaces a source that
+# changed its markup or started blocking us.
+on:
+  schedule:
+    - cron: "30 2 * * *" # every day at 02:30 UTC
+  workflow_dispatch:
+    inputs:
+      adsb_icao:
+        description: "Pin the ADS-B suite to one aircraft (ICAO hex)"
+        required: false
+        type: string
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          ADSB_ICAO: ${{ inputs.adsb_icao }}
