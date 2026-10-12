@@ -16,37 +16,31 @@ async function getLocationFromVF(mmsi, cb) {
 
 async function getLocationFromMST(mmsi, cb) {
   const mst = new MyShipTracking();
+  let result;
   try {
     const location = await mst.getLocation(mmsi);
     console.log(location);
-    cb({
-      error: null,
-      data: location,
-    });
+    result = { error: null, data: location };
   } catch (e) {
-    cb({
-      error: e,
-      data: null,
-    });
+    result = { error: e, data: null };
   }
+  // Called outside the try on purpose: a throw from cb is the caller's own
+  // failure and must not be reported back as a source error.
+  cb(result);
 }
 
 async function getLocationFromMT(mmsi, cb) {
   const mt = new Marinetraffic();
-
+  let result;
   try {
     const location = await mt.getLocation(mmsi);
     console.log(location);
-    cb({
-      error: null,
-      data: location,
-    });
+    result = { error: null, data: location };
   } catch (e) {
-    cb({
-      error: e,
-      data: null,
-    });
+    result = { error: e, data: null };
   }
+  // See getLocationFromMST: the callback runs outside the try.
+  cb(result);
 }
 
 function getLocation(mmsi, cb) {
@@ -61,6 +55,9 @@ function getLocation(mmsi, cb) {
         debug("got location from mt", MTResult);
         if (!VFResult.data) {
           return cb(MTResult);
+        }
+        if (!MTResult.data) {
+          return cb(VFResult);
         }
         const vfDate = moment(VFResult.data.timestamp);
         const mtDate = moment(MTResult.data.timestamp);
@@ -93,12 +90,17 @@ function getVesselsInPort(shipPort, cb) {
     brotli: true,
   };
   request(options, function (error, response, html) {
+    // The source answers a blocked scrape with an HTML error page, so the
+    // payload may carry no "data" at all. Reading it unguarded threw inside
+    // this callback, which took the whole process down.
+    const vessels = response?.body?.data;
     if (
-      (!error && response.statusCode === 200) ||
-      (typeof response !== "undefined" && response.statusCode === 403)
+      ((!error && response?.statusCode === 200) ||
+        response?.statusCode === 403) &&
+      Array.isArray(vessels)
     ) {
       return cb(
-        response.body.data.map((vessel) => ({
+        vessels.map((vessel) => ({
           name: vessel.SHIPNAME,
           id: vessel.SHIP_ID,
           lat: Number(vessel.LAT),
@@ -119,7 +121,7 @@ function getVesselsInPort(shipPort, cb) {
         })),
       );
     } else {
-      debug("error in getVesselsInPort");
+      debug("error in getVesselsInPort", error ?? response?.statusCode);
       cb({ error: "an unknown error occured" });
       return false;
     }
