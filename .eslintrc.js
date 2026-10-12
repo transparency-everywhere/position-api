@@ -3,7 +3,9 @@ module.exports = {
     es2021: true,
     node: true,
   },
-  extends: "standard-with-typescript",
+  // "prettier" must come last: it switches off the stylistic rules from
+  // standard-with-typescript that conflict with the repo's prettier formatting.
+  extends: ["standard-with-typescript", "prettier"],
   overrides: [
     {
       env: {

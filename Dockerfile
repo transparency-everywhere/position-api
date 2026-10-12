@@ -17,13 +17,17 @@ COPY . .
 
 # Set ownership to pptruser
 RUN chown -R pptruser:pptruser /app
-RUN apt update && apt install -y chromium
 
 # Switch to pptruser for npm install and running the app
 USER pptruser
 
 # Install dependencies (including puppeteer)
 RUN npm install
+
+# Puppeteer downloads Chrome from a postinstall script, which recent npm
+# versions skip unless it has been approved. Install the matching Chrome build
+# explicitly so the image never ends up without a browser.
+RUN npx puppeteer browsers install chrome
 
 # Expose port if your app runs a server (optional)
 # EXPOSE 3000

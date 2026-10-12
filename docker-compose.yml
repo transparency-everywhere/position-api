@@ -9,7 +9,8 @@ services:
       - .env
     environment:
       - NODE_ENV=production
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+      # No PUPPETEER_EXECUTABLE_PATH: puppeteer uses the Chrome build it
+      # installs itself, which is guaranteed to match the puppeteer version.
     # If you need to persist data, add volumes here
     # volumes:
     #   - .:/app

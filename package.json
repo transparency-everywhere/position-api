@@ -8,7 +8,7 @@
     "position-api": "src/index.ts"
   },
   "scripts": {
-    "build": "npx tsc",
+    "build": "npx tsc && npx copyfiles -u 1 \"src/static/**/*\" dist",
     "start": "npx tsx src/index.ts",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "lint": "eslint --ext .ts .",
@@ -17,11 +17,16 @@
     "test": "jest",
     "test:curl": "sh ./test-curl.sh",
     "test:curl:js": "jest ./test/api.curl.test.ts",
+    "test:integration": "sh ./test/integration.sh",
+    "test:e2e:docker": "sh ./test/e2e-docker.sh",
     "postinstall": "copyfiles -n .env.template .env",
-    "generate:readme": "pandoc -f markdown+autolink_bare_uris README.md -o ./src/static/index.html"
+    "generate:readme": "pandoc -f markdown+autolink_bare_uris readme.md -o ./src/static/index.html"
   },
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^18.19.9",
@@ -30,6 +35,7 @@
     "concurrently": "^7.6.0",
     "copyfiles": "^2.4.1",
     "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.2",
     "eslint-config-standard-with-typescript": "^40.0.0",
     "eslint-plugin-import": "^2.29.0",
     "eslint-plugin-n": "^16.3.1",
@@ -53,14 +59,20 @@
     "moment": "^2.30.1",
     "node-fetch": "^2.6.7",
     "path": "^0.12.7",
-    "puppeteer": "^19.11.1",
+    "puppeteer": "^25.1.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "request": "^2.88.2",
-    "ts-jest": "^29.4.0"
+    "ts-jest": "^29.4.0",
+    "tsx": "^4.23.15"
   },
   "jest": {
     "preset": "ts-jest",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "\\.docker\\.test\\.ts$",
+      "/test/integration/"
+    ]
   }
 }
