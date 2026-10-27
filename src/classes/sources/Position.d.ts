@@ -8,6 +8,7 @@ declare module "PositionTypes" {
     source: string;
     source_type: string;
     altitude?: number;
+    on_ground?: boolean;
     raw?: any;
   }
 }

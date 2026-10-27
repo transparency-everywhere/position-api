@@ -1,51 +1,95 @@
 import fetch from "node-fetch";
 import Source from "../Source";
 
-class ADSBExchange extends Source {
-  parseLocation = async function (result: any) {
-    const location = {
-      timestamp: result.timestamp,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      course: result.course,
-      speed: result.speed,
-      raw: result.raw,
-      source: "adsbExchange",
-      source_type: "adsb",
-    };
-    return location;
-  };
+/**
+ * How long one trace request may take. The upstream normally answers within
+ * a second; without a ceiling a stalled connection held the HTTP request
+ * that asked for it open indefinitely.
+ */
+const REQUEST_TIMEOUT_MS = 20000;
 
+/**
+ * An ICAO 24-bit address is six hex digits. Anything else cannot have a trace
+ * file, and would otherwise be interpolated into a URL path unchecked.
+ */
+const ICAO_PATTERN = /^[0-9a-f]{6}$/;
+
+/**
+ * One row of a trace, as adsbexchange.com publishes it. The readme of its
+ * globe application documents the layout:
+ *   [seconds since `timestamp`, lat, lon, alt_baro, ground speed, track, ...]
+ * alt_baro is the literal string "ground" while the aircraft is on the
+ * ground, and track and speed may be null when the receiver had no value.
+ */
+type TraceRow = [number, number, number, number | "ground" | null, ...any[]];
+
+const toNumber = (value: any, fallback: number): number => {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+class ADSBExchange extends Source {
   getLocation = async (icao: string) => {
-    const response = await fetch(
-      `https://globe.adsbexchange.com/data/traces/${icao.slice(
-        -2,
-      )}/trace_recent_${icao}.json`,
-      {
-        headers: {
-          accept: "application/json, text/javascript, */*; q=0.01",
-          "accept-language": "de-DE,de;q=0.9",
-          "sec-ch-ua":
-            '"Chromium";v="116", "Not)A;Brand";v="24", "Brave";v="116"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
-          "sec-gpc": "1",
-          "x-requested-with": "XMLHttpRequest",
-          Referer: "https://globe.adsbexchange.com/?icao=39e68b",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
+    const hex = String(icao ?? "")
+      .trim()
+      .toLowerCase();
+    if (!ICAO_PATTERN.test(hex)) {
+      // Not a possible aircraft address, so there is nothing to look up. This
+      // reads as "no position" rather than as an upstream failure.
+      console.error(`Not an ICAO hex address: ${JSON.stringify(icao)}`);
+      return null;
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      controller.abort();
+    }, REQUEST_TIMEOUT_MS);
+
+    let response;
+    try {
+      response = await fetch(
+        `https://globe.adsbexchange.com/data/traces/${hex.slice(
+          -2,
+        )}/trace_recent_${hex}.json`,
+        {
+          headers: {
+            accept: "application/json, text/javascript, */*; q=0.01",
+            "accept-language": "de-DE,de;q=0.9",
+            "sec-ch-ua":
+              '"Chromium";v="116", "Not)A;Brand";v="24", "Brave";v="116"',
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": '"macOS"',
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-origin",
+            "sec-gpc": "1",
+            "x-requested-with": "XMLHttpRequest",
+            // The globe page that would issue this request for this aircraft.
+            Referer: `https://globe.adsbexchange.com/?icao=${hex}`,
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+          },
+          body: undefined,
+          method: "GET",
+          signal: controller.signal,
         },
-        body: undefined,
-        method: "GET",
-      },
-    );
+      );
+    } catch (err: any) {
+      if (err?.name === "AbortError") {
+        throw new Error(
+          `adsbexchange.com did not answer within ${REQUEST_TIMEOUT_MS} ms`,
+        );
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.error(`Data not found for ICAO: ${icao}`);
-        return null; // Return null or fallback data
+        // No trace file exists for an aircraft that has not been seen
+        // recently, which is a normal answer rather than a failure.
+        console.error(`Data not found for ICAO: ${hex}`);
+        return null;
       }
       throw new Error(
         `Failed to fetch data: ${response.status} ${response.statusText}`,
@@ -58,7 +102,7 @@ class ADSBExchange extends Source {
     }
 
     const body = await response.text();
-    let bodyjson;
+    let bodyjson: any;
     try {
       bodyjson = JSON.parse(body);
     } catch (err) {
@@ -69,89 +113,32 @@ class ADSBExchange extends Source {
       }
     }
 
-    const data = bodyjson as { timestamp: any; trace: any }; // Add this line
+    const trace: TraceRow[] | undefined = Array.isArray(bodyjson?.trace)
+      ? bodyjson.trace
+      : undefined;
+    const lastTrace = trace?.[trace.length - 1];
+    if (lastTrace === undefined || !Array.isArray(lastTrace)) {
+      // The file exists but holds no positions yet: no data, not an error.
+      console.error(`Empty trace for ICAO: ${hex}`);
+      return null;
+    }
 
-    const timestamp = data.timestamp;
-    const trace = data.trace;
-    const last_trace = trace[trace.length - 1];
-    const [time_offset, lat, lon, alt_baro, ground_speed, ground_track] =
-      last_trace;
-    const last_trace_timestamp = timestamp + time_offset;
-    const location = this.parseLocation({
-      timestamp: last_trace_timestamp,
+    const [timeOffset, lat, lon, altBaro, groundSpeed, groundTrack] = lastTrace;
+    const position = {
+      timestamp: toNumber(bodyjson.timestamp, 0) + toNumber(timeOffset, 0),
       latitude: lat,
       longitude: lon,
-      course: ground_track,
-      speed: ground_speed, // knots
-      altitude: alt_baro,
+      course: toNumber(groundTrack, 0),
+      speed: toNumber(groundSpeed, 0), // knots
+      // Barometric altitude in feet; 0 while the aircraft is on the ground.
+      altitude: altBaro === "ground" ? 0 : toNumber(altBaro, 0),
+      on_ground: altBaro === "ground",
       raw: bodyjson,
-    });
-    return await location;
-  };
-
-  getLocationFull = async (icao: string) => {
-    const response = await fetch(
-      `https://globe.adsbexchange.com/data/traces/${icao.slice(
-        -2,
-      )}/trace_full_${icao}.json`,
-      {
-        headers: {
-          accept: "application/json, text/javascript, */*; q=0.01",
-          "accept-language": "de-DE,de;q=0.9",
-          "sec-ch-ua":
-            '"Chromium";v="116", "Not)A;Brand";v="24", "Brave";v="116"',
-          "sec-ch-ua-mobile": "?0",
-          "sec-ch-ua-platform": '"macOS"',
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "same-origin",
-          "sec-gpc": "1",
-          "x-requested-with": "XMLHttpRequest",
-          Referer: "https://globe.adsbexchange.com/?icao=39e68b",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-        },
-        body: undefined,
-        method: "GET",
-      },
-    );
-    const body = await response.text();
-    const bodyjson = JSON.parse(body);
-    const data = bodyjson as { timestamp: any; trace: any }; // Add this line
-
-    const timestamp = data.timestamp;
-    const trace = data.trace;
-
-    console.log(trace);
-    const last_trace = trace[trace.length - 1];
-    const [
-      time_offset,
-      lat,
-      lon,
-      alt_baro,
-      ground_speed,
-      unknown2,
-      unknown3,
-      unknown4,
-      unknown5,
-    ] = last_trace;
-    console.log("check that lat and lon in correct order!!");
-    console.log("last trace");
-    console.log(last_trace);
-    console.log("=========");
-    const last_trace_timestamp = timestamp + time_offset;
-    console.log(last_trace_timestamp);
-    console.log(new Date(last_trace_timestamp * 1000));
-    console.log(
-      time_offset,
-      lat,
-      lon,
-      alt_baro,
-      ground_speed,
-      unknown2,
-      unknown3,
-      unknown4,
-      unknown5,
-    );
+      source: "adsbExchange",
+      source_type: "adsb",
+    };
+    this.verifyPosition(position);
+    return position;
   };
 }
 

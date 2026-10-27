@@ -1,24 +1,6 @@
 import Source from "../Source";
 
 class MyShipTracking extends Source {
-  parseLocation = async function (result: any) {
-    const location = {
-      timestamp: result.timestamp,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      course: result.course,
-      speed: result.speed,
-      source: "myshiptracking.com",
-      source_type: "AIS",
-    };
-    return location;
-  };
-
-  // the method in the sources class does not work if no seconds are in the string
-  dmsToDecimalDegreesMST = function (dms) {
-    return parseFloat(dms);
-  };
-
   /**
    * Reads the "<th>Label</th><td>value</td>" rows of the vessel detail table.
    * Coordinates are withheld from this table for anonymous visitors (they are

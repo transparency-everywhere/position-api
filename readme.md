@@ -35,9 +35,15 @@ That endpoint is addressed by **area** and publishes no MMSI, only `SHIPNAME`
 and Marinetraffic's own `SHIP_ID`. A lookup by MMSI therefore needs two things
 it cannot supply: the vessel's name, and somewhere to start looking. Both come
 from MyShipTracking, after which the tiles around that position are searched —
-3x3 tiles at zoom 8, then 6, then 4 — and the row is matched by name. The
+3x3 tiles at zoom 11, then 8, 6 and 4 — and the row is matched by name. The
 position that comes back is Marinetraffic's own report, which is usually far
 fresher than the one used to find it.
+
+The finest zoom is searched first because the tile endpoint thins out its
+answer at coarse zooms and returns only a sample of the vessels in a tile. A
+vessel moored in a busy port is only reliably listed from about zoom 11 on;
+the coarse levels still find one that has moved out to sea, where density is
+low.
 
 Two consequences worth knowing:
 
@@ -67,7 +73,7 @@ it contradicted every other signal a site sees.
 ### Prerequisites
 
 - **Node.js 22.12 or newer.** Puppeteer 25 requires it. Older versions may
-  work but are not supported.
+  work but are not supported. An `.nvmrc` pins the major version for `nvm use`.
 - npm
 - A Chrome build for Puppeteer. `npm install` downloads it through Puppeteer's
   postinstall script. Recent npm versions skip install scripts until they are
@@ -142,8 +148,9 @@ On `/adsb/adsbe` and `/ais/mt`, `error` is a string. The `/legacy` routes keep
 the shape their original clients expect and pass the failure through as an
 object, which serialises to `{}` — check it for truthiness, not for content.
 
-The ADS-B route additionally labels the source and passes the upstream trace
-through, so callers can read fields this shape does not cover:
+The ADS-B route additionally reports the barometric altitude in feet, whether
+the aircraft is on the ground, and passes the upstream trace through, so
+callers can read fields this shape does not cover:
 
 ```json
 {
@@ -154,6 +161,8 @@ through, so callers can read fields this shape does not cover:
     "longitude": 12.631208,
     "course": 34.8,
     "speed": 478.5,
+    "altitude": 37000,
+    "on_ground": false,
     "source": "adsbExchange",
     "source_type": "adsb",
     "raw": { "icao": "3c6749", "r": "D-AIZI", "t": "A320" }
@@ -161,7 +170,11 @@ through, so callers can read fields this shape does not cover:
 }
 ```
 
-ADS-B timestamps are epoch seconds; AIS timestamps are ISO 8601 in UTC.
+ADS-B timestamps are epoch seconds; AIS timestamps are ISO 8601 in UTC. While
+an aircraft is on the ground its trace carries no altitude and often no track,
+so `altitude` is `0`, `on_ground` is `true`, and `course` and `speed` are `0`
+when the receiver reported none. The ICAO address is six hex digits in either
+case; anything else answers with `data: null` without a lookup.
 
 The area, port and vessel-list routes answer with a bare JSON array, or `null`
 when the source returned nothing.

@@ -1,4 +1,4 @@
-import Marinetraffic from "../classes/sources/ais/mt";
+import Marinetraffic, { type VesselSeed } from "../classes/sources/ais/mt";
 import MyShipTracking from "../classes/sources/ais/mst";
 
 const moment = require("moment");
@@ -14,26 +14,42 @@ async function getLocationFromVF(mmsi, cb) {
   await getLocationFromMST(mmsi, cb);
 }
 
-async function getLocationFromMST(mmsi, cb) {
+/**
+ * Reads the vessel from MyShipTracking. The result carries the vessel's name
+ * next to the position, which is what Marinetraffic needs to start a search;
+ * it is stripped again before the position is sent to a client.
+ */
+async function readVesselFromMST(mmsi) {
   const mst = new MyShipTracking();
-  let result;
   try {
-    const location = await mst.getLocation(mmsi);
-    console.log(location);
-    result = { error: null, data: location };
+    const vessel = await mst.getVessel(mmsi);
+    console.log(vessel);
+    return { error: null, vessel };
   } catch (e) {
-    result = { error: e, data: null };
+    return { error: e, vessel: null };
   }
-  // Called outside the try on purpose: a throw from cb is the caller's own
-  // failure and must not be reported back as a source error.
-  cb(result);
 }
 
-async function getLocationFromMT(mmsi, cb) {
+const withoutName = (vessel) => {
+  if (!vessel) {
+    return null;
+  }
+  const { name, ...position } = vessel;
+  return position;
+};
+
+async function getLocationFromMST(mmsi, cb) {
+  const { error, vessel } = await readVesselFromMST(mmsi);
+  // Called outside the try on purpose: a throw from cb is the caller's own
+  // failure and must not be reported back as a source error.
+  cb({ error, data: withoutName(vessel) });
+}
+
+async function getLocationFromMT(mmsi, cb, seed: VesselSeed | null = null) {
   const mt = new Marinetraffic();
   let result;
   try {
-    const location = await mt.getLocation(mmsi);
+    const location = await mt.getLocation(mmsi, seed);
     console.log(location);
     result = { error: null, data: location };
   } catch (e) {
@@ -43,31 +59,40 @@ async function getLocationFromMT(mmsi, cb) {
   cb(result);
 }
 
-function getLocation(mmsi, cb) {
+/**
+ * Asks both AIS sources and answers with the newer report. MyShipTracking is
+ * read first and its vessel handed to Marinetraffic as the search seed, so
+ * the lookup drives two browser sessions rather than three — Marinetraffic
+ * would otherwise resolve the same vessel through MyShipTracking again.
+ */
+async function getLocation(mmsi, cb) {
   debug("getting location for vessel: ", mmsi);
-  getLocationFromVF(mmsi, function (VFResult) {
-    debug("got location from vf", VFResult);
+  const mst = await readVesselFromMST(mmsi);
+  const vfResult = { error: mst.error, data: withoutName(mst.vessel) };
+  debug("got location from vf", vfResult);
 
-    getLocationFromMT(mmsi, function (MTResult) {
-      if (MTResult.error) {
-        cb(VFResult);
-      } else {
-        debug("got location from mt", MTResult);
-        if (!VFResult.data) {
-          return cb(MTResult);
-        }
-        if (!MTResult.data) {
-          return cb(VFResult);
-        }
-        const vfDate = moment(VFResult.data.timestamp);
-        const mtDate = moment(MTResult.data.timestamp);
-        const secondsDiff = mtDate.diff(vfDate, "seconds");
-        debug("time diff in seconds: ", secondsDiff);
-
-        cb(secondsDiff > 0 ? MTResult : VFResult);
+  await getLocationFromMT(
+    mmsi,
+    function (mtResult) {
+      if (mtResult.error) {
+        return cb(vfResult);
       }
-    });
-  });
+      debug("got location from mt", mtResult);
+      if (!vfResult.data) {
+        return cb(mtResult);
+      }
+      if (!mtResult.data) {
+        return cb(vfResult);
+      }
+      const vfDate = moment(vfResult.data.timestamp);
+      const mtDate = moment(mtResult.data.timestamp);
+      const secondsDiff = mtDate.diff(vfDate, "seconds");
+      debug("time diff in seconds: ", secondsDiff);
+
+      cb(secondsDiff > 0 ? mtResult : vfResult);
+    },
+    mst.vessel,
+  );
 }
 
 function getVesselsInPort(shipPort, cb) {

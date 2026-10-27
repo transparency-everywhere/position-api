@@ -25,9 +25,17 @@ const TILE_ENDPOINT = "https://www.marinetraffic.com/getData/get_data_json_4";
 /**
  * Zoom levels to search, narrowest first. Each is searched as a 3x3 block of
  * tiles around the seed position, so a wider zoom tolerates a staler seed:
- * z:8 covers roughly a few hundred km, z:4 a whole sea region.
+ * z:11 covers roughly 90 km around the seed, z:8 a few hundred km, z:4 a
+ * whole sea region.
+ *
+ * The finest level comes first for a reason beyond speed: the tile endpoint
+ * thins out its answer at coarse zooms, returning only a sample of the
+ * vessels in a tile (a 3x3 block at z:8 listed ten ships in a port that
+ * holds forty). A vessel moored among many others is therefore only
+ * reliably returned from about z:11 on, while the coarse levels still find
+ * one that has moved out to sea, where density is low.
  */
-const SEARCH_ZOOMS = [8, 6, 4];
+const SEARCH_ZOOMS = [11, 8, 6, 4];
 
 /**
  * Marinetraffic addresses tiles as "z:N", where N indexes a grid of
@@ -51,6 +59,13 @@ export function tileFor(
   };
 }
 
+/** What a lookup needs to start from: who to look for, and roughly where. */
+export interface VesselSeed {
+  name?: string;
+  latitude: number;
+  longitude: number;
+}
+
 /** Names differ in punctuation between sources ("SEA-WATCH 5" / "SEA WATCH 5"). */
 export const normaliseName = (name: any): string =>
   String(name ?? "")
@@ -58,19 +73,6 @@ export const normaliseName = (name: any): string =>
     .replace(/[^A-Z0-9]/g, "");
 
 class Marinetraffic extends Source {
-  parseLocation = async function (result: any) {
-    const location = {
-      timestamp: result.timestamp,
-      latitude: result.latitude,
-      longitude: result.longitude,
-      course: result.course,
-      speed: result.speed,
-      source: "Marinetraffic",
-      source_type: "AIS",
-    };
-    return location;
-  };
-
   /**
    * Turns one tile row into the shared position shape. Marinetraffic reports
    * SPEED in tenths of a knot, COURSE in whole degrees, and ELAPSED as the
@@ -117,18 +119,26 @@ class Marinetraffic extends Source {
     return paths;
   };
 
-  getLocation = async (mmsi: number) => {
+  /**
+   * @param mmsi   The vessel to look up.
+   * @param seed   The vessel's name and last known position, if the caller
+   *               already holds them (the combined legacy route does, having
+   *               just asked MyShipTracking). Otherwise they are resolved
+   *               here, which costs a second browser session.
+   */
+  getLocation = async (mmsi: number, seed?: VesselSeed | null) => {
     // Resolve the vessel's name and roughly where to look. Without this there
     // is no way to turn an MMSI into something the tile endpoint understands.
-    let seed: any;
-    try {
-      seed = await new MyShipTracking().getVessel(mmsi);
-    } catch (err) {
-      console.error(
-        "Could not resolve MMSI " + mmsi + " to a vessel to search for:",
-        err,
-      );
-      return null;
+    if (seed === undefined || seed === null) {
+      try {
+        seed = await new MyShipTracking().getVessel(mmsi);
+      } catch (err) {
+        console.error(
+          "Could not resolve MMSI " + mmsi + " to a vessel to search for:",
+          err,
+        );
+        return null;
+      }
     }
 
     const wanted = normaliseName(seed?.name);
